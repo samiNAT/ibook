@@ -1,0 +1,45 @@
+Problem
+Office/facilities managers at small-to-medium businesses (roughly 5-20 meeting rooms) manage room bookings via shared spreadsheets or basic calendar invites. This causes double-bookings from overwrite conflicts, and rooms sitting empty because no-shows never release their slot. Enterprise tools (Robin, Teams Rooms, Envoy) solve this but require IT-led rollout, per-room hardware, and calendar-suite licensing that doesn't pencil out at this size - so these businesses stay on Excel. Validated directly with customers.
+
+Solution
+A room reservation app (mobile + desktop) that a facilities manager can set up themselves, no IT ticket and no hardware required - everything managed inside the app. Live availability, instant booking and cancellation, and automatic release of no-show bookings after a grace period, so rooms don't sit reserved-but-empty.
+
+Who
+Office/facilities managers at medium-sized businesses with several meeting rooms, no dedicated IT/facilities software budget.
+
+Why now
+Enterprise solutions oversolve this problem for SMB budgets (hardware, per-seat licensing, IT deployment). Lightweight calendar tools undersolve it (no no-show reclaim, no real-time conflict handling). Nobody serves the "few rooms, no IT department" segment well.
+
+Competitive positioning
+Skedda and Whatspot already cover this feature set (per-space pricing, no hardware, no-show auto-release), so this is not an empty space. Skedda in particular is priced ($99-199/room/month) and featured (zones, approval workflows, analytics) for mid-market (100-2000 employees), not truly small offices (5-20 rooms). The v1 wedge: radical simplicity (no zones/approvals/analytics to configure) at a meaningfully lower price point, targeting the small-office segment Skedda overshoots. Simplicity is a v1 sequencing choice, not a permanent constraint - features like zones/approvals may get added later as customers ask, without over-engineering against them now.
+
+Pricing
+Per room. Anchor to validate with customers: $15-30/room/month (vs. Skedda's ~$99+ floor), or a flat small-office bundle (e.g. $99/month for up to 10 rooms) if per-room pricing feels wrong at small room counts.
+
+MVP scope (v1)
+Must-have: room setup (no zones/approval rules), live availability view (mobile + desktop, responsive web), instant conflict-free booking, cancellation, no-show check-in + auto-release (notification at booking start, one-tap confirm, auto-release after a grace period if unconfirmed), one-way Google Calendar sync for Google sign-ins (booking pushes to the individual booker's personal calendar; app remains sole source of truth for room availability, no company/resource calendar integration), notifications (confirmation, reminder, release notice), team access via shared link + manager approval (see Onboarding below), self-serve Stripe billing.
+Deferred to v2+: zones, approval workflows, analytics/utilization dashboards, recurring bookings, multi-location support, Slack/Teams chat booking, two-way calendar sync, native mobile apps (v1 is responsive web).
+
+Onboarding (self-serve)
+1. Manager signs up via Google sign-in (or email/magic-link if no Google account - no calendar sync in that case), enters company name.
+2. Manager adds rooms (name + capacity) - sees live availability screen populated immediately.
+3. Manager gets a shareable company join-link (no manual per-employee invites).
+4. Employee clicks link, signs in (Google or email), lands in a pending-approval state (can see the app, can't book yet).
+5. Manager gets notified of the join request and approves with one tap; no roles/permissions beyond manager vs. approved member.
+6. Approved employee books a room and sees it reflected instantly - first "aha" moment of the trial.
+Goal: whole flow (steps 1-2) takes under an hour with no IT ticket, matching the core pitch.
+
+Go-to-market
+Self-serve SaaS with self-serve Stripe checkout from day one (no manual invoicing). Beachhead: already-interested validated customers become first live users/design partners and case studies. Funnel: free trial (e.g. free for first 1-2 rooms, or 14-30 day full trial), no sales call required. First acquisition channel to test: Google Workspace Marketplace listing (high-intent audience already using Google Calendar) and G2/Capterra listings; SEO/content deprioritized initially given competition from incumbents.
+V1 success metric: TBD - not yet decided what "validated" looks like (e.g. paying customer count, active usage from existing contacts). Decide before or shortly after launch so v1 has a clear go/no-go signal.
+
+Tech stack (v1)
+Language: TypeScript throughout (frontend + backend).
+App type: responsive web app, not native mobile - works in any phone/desktop browser, no app store submission, single codebase; can become an installable PWA later without a rewrite.
+Framework: Next.js (React) - handles UI and backend API routes in one project.
+Auth: Auth.js (NextAuth), Google as primary provider (enables calendar sync) plus email/magic-link fallback for non-Google users.
+Database: PostgreSQL via Amazon RDS or Aurora Serverless v2 (scales to near-zero cost while idle).
+Hosting: AWS Amplify Hosting - deploys from git push, managed build/scaling.
+Billing: Stripe Checkout + Billing (self-serve subscriptions).
+Notifications: web push (Service Worker + Push API) as primary channel, works well on Android/desktop without friction. iOS constraint: web push only works if the PWA is added to home screen first (Apple platform restriction, no workaround) - onboarding must prompt iOS users to "Add to Home Screen" specifically for this reason. Amazon SES email is a guaranteed fallback alongside push, critical for the no-show check-in prompt so it still lands if push silently fails or wasn't set up.
+Live availability: simple polling/refresh (10-15s or on focus), not WebSockets - sufficient for v1, far less to build/operate.
