@@ -1,0 +1,113 @@
+name: Deploy to Cloud Run
+
+# Runs on every push to main, and on demand from the Actions tab.
+# The manual trigger lets you redeploy the current main without an empty commit.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why this manual deploy is being run
+        required: false
+        default: Manual redeploy
+
+# One deploy at a time. A newer push supersedes a queued one, but never
+# cancels a deploy already in flight — half-applied releases are worse
+# than a slightly stale one.
+concurrency:
+  group: deploy-cloud-run
+  cancel-in-progress: false
+
+env:
+  GCP_PROJECT_ID: ibook-509112
+  GCP_REGION: europe-west1
+  SERVICE_NAME: ibook
+
+jobs:
+  # Gate. The deploy job does not start unless this passes, so main can
+  # never ship a build that fails its own test suite.
+  verify:
+    name: Test, lint, typecheck, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run format:check
+      - run: npm run build
+
+  deploy:
+    name: Deploy to Cloud Run
+    needs: verify
+    runs-on: ubuntu-latest
+
+    # Required for Workload Identity Federation: GitHub mints an OIDC token
+    # that GCP trusts. No service-account key is stored anywhere.
+    permissions:
+      contents: read
+      id-token: write
+
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          project_id: ${{ env.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      # Source deploy: Cloud Build compiles the app with buildpacks, so there
+      # is no Dockerfile to keep in step with the project. Next.js honours the
+      # PORT that Cloud Run injects, so no extra configuration is needed.
+      - name: Deploy
+        id: deploy
+        run: |
+          gcloud run deploy "$SERVICE_NAME" \
+            --source . \
+            --project "$GCP_PROJECT_ID" \
+            --region "$GCP_REGION" \
+            --platform managed \
+            --allow-unauthenticated \
+            --min-instances 0 \
+            --max-instances 4 \
+            --memory 512Mi \
+            --quiet
+
+          URL="$(gcloud run services describe "$SERVICE_NAME" \
+            --project "$GCP_PROJECT_ID" --region "$GCP_REGION" \
+            --format 'value(status.url)')"
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "Deployed to $URL" >> "$GITHUB_STEP_SUMMARY"
+
+      # Deployed is not the same as working. Fail the run if the live service
+      # does not answer its own health probe.
+      - name: Verify the deployment responds
+        run: |
+          URL="${{ steps.deploy.outputs.url }}"
+          for i in $(seq 1 10); do
+            CODE="$(curl -s -o /dev/null -w '%{http_code}' "$URL/api/health" || true)"
+            if [ "$CODE" = "200" ]; then
+              echo "Health check passed: $URL/api/health -> 200"
+              exit 0
+            fi
+            echo "Attempt $i: got '$CODE', retrying..."
+            sleep 6
+          done
+          echo "Health check never returned 200 — deployment is not healthy."
+          exit 1

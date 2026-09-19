@@ -1,0 +1,23 @@
+# Files not uploaded when deploying with gcloud.
+# Without this, gcloud would ship node_modules and .next — slow and wasteful.
+
+.git/
+.gitignore
+.claude/
+
+node_modules/
+.next/
+out/
+build/
+
+.env
+.env*.local
+*.pem
+
+npm-debug.log*
+.DS_Store
+*.tsbuildinfo
+
+# Docs and design material — not needed at runtime.
+docs/
+home.html
