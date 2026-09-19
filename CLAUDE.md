@@ -4,7 +4,41 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-This repository currently contains no code, only a product brainstorm document ([pitch.txt](pitch.txt)). There are no build, lint, or test commands yet because nothing has been scaffolded. Once a project is initialized, replace this section with the real commands (build, lint, test - including how to run a single test) and add an architecture section describing the actual code structure.
+Scaffolded (KAN-12). Next.js App Router with TypeScript strict mode, Tailwind CSS v4, and
+Vitest. The only route with behaviour so far is the health probe; the data model (KAN-13),
+PostgreSQL (KAN-14) and Amplify deployment (KAN-15) are not built yet.
+
+### Commands
+
+| Command                | What it does                         |
+| ---------------------- | ------------------------------------ |
+| `npm run dev`          | Development server on port 3000      |
+| `npm run build`        | Production build                     |
+| `npm test`             | Run the whole suite once             |
+| `npm run test:watch`   | Watch mode                           |
+| `npm run lint`         | ESLint                               |
+| `npm run typecheck`    | `tsc --noEmit`, strict               |
+| `npm run format:check` | Prettier, fails on unformatted files |
+
+Run a single test file: `npx vitest run tests/health.test.ts`
+Run a single test by name: `npx vitest run -t "responds with 200"`
+
+### Architecture
+
+```
+app/                Next.js App Router. Pages and API routes in one project.
+app/layout.tsx      Root layout: fonts, Tailwind, <html>/<body> shell.
+app/page.tsx        Landing page placeholder.
+app/api/<name>/route.ts   API route handlers. Export GET/POST as named functions.
+app/globals.css     Tailwind entry point.
+tests/              Vitest suite. setup.ts registers jest-dom matchers.
+docs/               Product documents (PRD, intents, specs).
+.claude/SKILLS/     Agent role skills.
+```
+
+Route handlers are plain exported functions, so tests import and call them directly
+rather than going over HTTP — see [tests/health.test.ts](tests/health.test.ts). The `@/*`
+import alias maps to the repository root.
 
 ## What this project is
 
@@ -53,7 +87,7 @@ Every generated document starts with this block, and nothing else may precede it
 ```yaml
 ---
 id: 0003
-status: draft            # draft | ready-for-review | approved | blocked | superseded
+status: draft # draft | ready-for-review | approved | blocked | superseded
 owner: ibook-architect # the role that produced it
 inputs: [docs/prd.md, docs/intents/0003-capture-summary.md]
 updated: 2026-09-08
@@ -101,3 +135,13 @@ STATUS:    ready-for-review | blocked
 DONE-WHEN: <each item, met or not met>
 NEXT:      <the role that should run next, and what it needs from the human first>
 ```
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
