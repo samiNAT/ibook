@@ -61,9 +61,38 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
 
     steps:
+      # An undefined secret expands to an empty string, so without this check
+      # the auth action fails with "must specify exactly one of
+      # workload_identity_provider or credentials_json" — which says nothing
+      # about the real cause. Decide up front instead, and skip rather than
+      # fail: an unconfigured project should not paint main red on every push.
+      - name: Check whether GCP deployment is configured
+        id: preflight
+        run: |
+          if [ -n "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}" ] \
+          && [ -n "${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "### Deploy skipped — GCP is not configured yet"
+              echo
+              echo "These repository secrets are missing:"
+              echo
+              [ -z "${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}" ] && echo "- \`GCP_WORKLOAD_IDENTITY_PROVIDER\`"
+              [ -z "${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}" ] && echo "- \`GCP_DEPLOY_SERVICE_ACCOUNT\`"
+              echo
+              echo "Run the one-time setup in [.github/DEPLOY.md](.github/DEPLOY.md),"
+              echo "then add them under Settings → Secrets and variables → Actions."
+              echo "The next push deploys automatically — this workflow needs no edit."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - uses: actions/checkout@v4
+        if: steps.preflight.outputs.configured == 'true'
 
       - name: Authenticate to Google Cloud
+        if: steps.preflight.outputs.configured == 'true'
         uses: google-github-actions/auth@v2
         with:
           project_id: ${{ env.GCP_PROJECT_ID }}
@@ -71,11 +100,13 @@ jobs:
           service_account: ${{ secrets.GCP_DEPLOY_SERVICE_ACCOUNT }}
 
       - uses: google-github-actions/setup-gcloud@v2
+        if: steps.preflight.outputs.configured == 'true'
 
       # Source deploy: Cloud Build compiles the app with buildpacks, so there
       # is no Dockerfile to keep in step with the project. Next.js honours the
       # PORT that Cloud Run injects, so no extra configuration is needed.
       - name: Deploy
+        if: steps.preflight.outputs.configured == 'true'
         id: deploy
         run: |
           gcloud run deploy "$SERVICE_NAME" \
@@ -98,6 +129,7 @@ jobs:
       # Deployed is not the same as working. Fail the run if the live service
       # does not answer its own health probe.
       - name: Verify the deployment responds
+        if: steps.preflight.outputs.configured == 'true'
         run: |
           URL="${{ steps.deploy.outputs.url }}"
           for i in $(seq 1 10); do

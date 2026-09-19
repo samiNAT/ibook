@@ -1,0 +1,18 @@
+# Normalise line endings. Without this, Git on Windows checks files out with
+# CRLF while Prettier's endOfLine: "lf" rejects them — so `format:check` fails
+# locally but passes in CI, and every checkout shows a dozen files as "modified"
+# with no actual content change.
+#
+# text=auto: Git decides what is text and stores it with LF in the repository.
+# eol=lf: check it back out as LF on every platform, Windows included.
+* text=auto eol=lf
+
+# Binary — never touch these.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
