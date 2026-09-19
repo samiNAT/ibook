@@ -1,12 +1,14 @@
+import AvailabilityBoard from '@/app/components/AvailabilityBoard'
+import { FIXTURE_ROOMS, formatHour } from '@/lib/availability'
+
+// Availability is live by definition — never prerender it at build time.
+export const dynamic = 'force-dynamic'
+
 export default function Home() {
+  const date = new Date()
+  const hour = date.getHours() + date.getMinutes() / 60
+
   return (
-    <main className="flex flex-1 items-center justify-center p-8">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">ibook</h1>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Meeting room booking for small offices.
-        </p>
-      </div>
-    </main>
+    <AvailabilityBoard rooms={FIXTURE_ROOMS} initialHour={hour} initialLabel={formatHour(hour)} />
   )
 }
