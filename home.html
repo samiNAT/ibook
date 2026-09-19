@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>ibook — Today</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* ibook — signed-in app home.
+         Style: Minimalism & Swiss. Tokens match the app's tokens.css so this
+         mockup and the running app share one palette. Room state is encoded
+         three ways — icon, word, and fill pattern — so colour is never the
+         only carrier (UX guideline: Accessibility / Color Only, severity High). */
+
+      :root {
+        --color-paper: oklch(98.6% 0.004 70);
+        --color-paper-2: oklch(96.4% 0.006 70);
+        --color-ink: oklch(23% 0.012 70);
+        --color-ink-2: oklch(46% 0.01 70);
+        --color-ink-3: oklch(62% 0.008 70);
+        --color-rule: oklch(88% 0.008 70);
+        --color-accent: oklch(62% 0.168 32);
+        --color-accent-ink: oklch(38% 0.11 32);
+        --color-focus: oklch(52% 0.17 32);
+        --color-booked-face: oklch(92% 0.014 70);
+        --color-booked-line: oklch(74% 0.014 70);
+
+        --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+        --text-xs: 0.75rem;
+        --text-sm: 0.8125rem;
+        --text-base: 0.9375rem;
+        --text-lg: 1.0625rem;
+        --text-xl: 1.375rem;
+        --text-hero: clamp(1.75rem, 6vw, 2.5rem);
+
+        --space-2xs: 0.25rem;
+        --space-xs: 0.5rem;
+        --space-sm: 0.75rem;
+        --space-md: 1rem;
+        --space-lg: 1.5rem;
+        --space-xl: 2rem;
+        --space-2xl: 3rem;
+
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-pill: 999px;
+        --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+        --dur: 200ms;
+
+        /* Minimum comfortable target. Android 48dp is the larger of the two
+           platform floors, so it governs; web's 24px WCAG floor is well clear. */
+        --target: 48px;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --color-paper: oklch(19% 0.008 70);
+          --color-paper-2: oklch(23% 0.009 70);
+          --color-ink: oklch(94% 0.006 70);
+          --color-ink-2: oklch(76% 0.008 70);
+          --color-ink-3: oklch(60% 0.008 70);
+          --color-rule: oklch(34% 0.01 70);
+          --color-accent: oklch(72% 0.15 34);
+          --color-accent-ink: oklch(86% 0.09 34);
+          --color-focus: oklch(78% 0.15 34);
+          --color-booked-face: oklch(27% 0.012 70);
+          --color-booked-line: oklch(44% 0.014 70);
+        }
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        overflow-x: clip;
+      }
+
+      body {
+        margin: 0;
+        background: var(--color-paper);
+        color: var(--color-ink);
+        font-family: var(--font-sans);
+        font-size: var(--text-base);
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .tnum {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .shell {
+        max-width: 60rem;
+        margin-inline: auto;
+        padding-inline: max(var(--space-md), env(safe-area-inset-left));
+        padding-block: var(--space-md) var(--space-2xl);
+      }
+
+      /* ---- header ---- */
+
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-md);
+        padding-block: var(--space-xs) var(--space-lg);
+      }
+
+      .wordmark {
+        font-size: var(--text-lg);
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        margin: 0;
+      }
+
+      .avatar {
+        width: 2rem;
+        height: 2rem;
+        flex: none;
+        border-radius: var(--radius-pill);
+        background: var(--color-paper-2);
+        border: 1px solid var(--color-rule);
+        display: grid;
+        place-items: center;
+        font-size: var(--text-xs);
+        font-weight: 600;
+        color: var(--color-ink-2);
+      }
+
+      /* ---- the answer you opened the app for ---- */
+
+      .lede {
+        margin: 0 0 var(--space-2xs);
+        font-size: var(--text-sm);
+        color: var(--color-ink-3);
+      }
+
+      .headline {
+        margin: 0 0 var(--space-xl);
+        font-size: var(--text-hero);
+        font-weight: 600;
+        letter-spacing: -0.03em;
+        line-height: 1.15;
+        overflow-wrap: anywhere;
+      }
+
+      .headline b {
+        color: var(--color-accent-ink);
+        font-weight: 600;
+      }
+
+      /* ---- sections ---- */
+
+      .cols {
+        display: grid;
+        gap: var(--space-xl);
+      }
+
+      .section__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-xs);
+      }
+
+      .section__title {
+        margin: 0;
+        font-size: var(--text-sm);
+        font-weight: 600;
+        letter-spacing: 0.01em;
+        text-transform: uppercase;
+        color: var(--color-ink-3);
+      }
+
+      .section__meta {
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+
+      .list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid var(--color-rule);
+      }
+
+      /* ---- room rows ---- */
+
+      .room {
+        display: flex;
+        align-items: center;
+        gap: var(--space-sm);
+        width: 100%;
+        min-height: var(--target);
+        padding: var(--space-sm) var(--space-2xs);
+        border: 0;
+        border-bottom: 1px solid var(--color-rule);
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        transition:
+          background-color var(--dur) var(--ease-out),
+          padding-inline-start var(--dur) var(--ease-out);
+      }
+
+      .room:hover {
+        background: var(--color-paper-2);
+        padding-inline-start: var(--space-xs);
+      }
+
+      .room:focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: -2px;
+        border-radius: var(--radius-sm);
+      }
+
+      .room[disabled] {
+        cursor: not-allowed;
+        color: var(--color-ink-2);
+      }
+
+      .room[disabled]:hover {
+        background: none;
+        padding-inline-start: var(--space-2xs);
+      }
+
+      /* Cue 1 of 3: a distinct glyph per state. */
+      .room__icon {
+        flex: none;
+        width: 1.25rem;
+        height: 1.25rem;
+        color: var(--color-ink-2);
+      }
+
+      .room--free .room__icon {
+        color: var(--color-accent);
+      }
+
+      .room__body {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .room__name {
+        display: block;
+        font-weight: 550;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Cue 2 of 3: the state written out, always. */
+      .room__state {
+        display: block;
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+
+      .room__seats {
+        flex: none;
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+        white-space: nowrap;
+      }
+
+      /* Cue 3 of 3: busy rooms carry a hatch; free rooms are plain. Survives
+         greyscale, colour-blindness and a sunlit phone screen. */
+      .room__bar {
+        flex: none;
+        width: 3rem;
+        height: 1.5rem;
+        border-radius: var(--radius-sm);
+        border: 1px dashed var(--color-rule);
+      }
+
+      .room--busy .room__bar {
+        border: 1px solid var(--color-booked-line);
+        background-color: var(--color-booked-face);
+        background-image: repeating-linear-gradient(
+          45deg,
+          transparent 0 4px,
+          var(--color-booked-line) 4px 5px
+        );
+      }
+
+      /* ---- bookings ---- */
+
+      .booking {
+        display: flex;
+        align-items: baseline;
+        gap: var(--space-sm);
+        padding: var(--space-sm) var(--space-2xs);
+        border-bottom: 1px solid var(--color-rule);
+        min-height: var(--target);
+      }
+
+      .booking__time {
+        flex: none;
+        width: 6.5rem;
+        font-size: var(--text-sm);
+        color: var(--color-ink-2);
+      }
+
+      .booking__what {
+        flex: 1 1 auto;
+        min-width: 0;
+      }
+
+      .booking__room {
+        display: block;
+        font-weight: 550;
+      }
+
+      .booking__label {
+        display: block;
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+
+      .now-chip {
+        display: inline-block;
+        margin-top: var(--space-2xs);
+        padding: 1px var(--space-xs);
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--color-accent);
+        color: var(--color-accent-ink);
+        font-size: var(--text-xs);
+        font-weight: 550;
+        white-space: nowrap;
+      }
+
+      .empty {
+        padding: var(--space-md) var(--space-2xs);
+        color: var(--color-ink-3);
+        font-size: var(--text-sm);
+        border-bottom: 1px solid var(--color-rule);
+      }
+
+      /* ---- primary action ---- */
+
+      .cta {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-xs);
+        width: 100%;
+        min-height: var(--target);
+        margin-top: var(--space-lg);
+        padding-inline: var(--space-md);
+        border: 0;
+        border-radius: var(--radius-md);
+        background: var(--color-accent);
+        color: oklch(99% 0.01 70);
+        font: inherit;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+        transition:
+          filter var(--dur) var(--ease-out),
+          transform 100ms var(--ease-out);
+      }
+
+      .cta:hover {
+        filter: brightness(1.06);
+      }
+
+      .cta:active {
+        transform: translateY(1px);
+      }
+
+      .cta:focus-visible {
+        outline: 2px solid var(--color-focus);
+        outline-offset: 2px;
+      }
+
+      .foot {
+        margin-top: var(--space-xl);
+        padding-top: var(--space-sm);
+        border-top: 1px solid var(--color-rule);
+        font-size: var(--text-xs);
+        color: var(--color-ink-3);
+      }
+
+      /* Two columns once there is room; single column is the base. */
+      @media (min-width: 52rem) {
+        .cols {
+          grid-template-columns: 1.3fr 1fr;
+          gap: var(--space-2xl);
+          align-items: start;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="shell">
+      <header class="top">
+        <h1 class="wordmark">ibook</h1>
+        <span class="avatar" aria-label="Signed in as Sami">SN</span>
+      </header>
+
+      <p class="lede tnum">Friday 19 September · 09:12</p>
+      <p class="headline"><b>Three rooms</b> are free right now.</p>
+
+      <div class="cols">
+        <section aria-labelledby="rooms-title">
+          <div class="section__head">
+            <h2 class="section__title" id="rooms-title">Rooms</h2>
+            <span class="section__meta tnum">3 of 5 free</span>
+          </div>
+
+          <ul class="list">
+            <li>
+              <button type="button" class="room room--free">
+                <svg
+                  class="room__icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="m8.5 12.5 2.5 2.5 4.5-5" />
+                </svg>
+                <span class="room__body">
+                  <span class="room__name">Birch</span>
+                  <span class="room__state">Free · all morning</span>
+                </span>
+                <span class="room__seats tnum">4 seats</span>
+                <span class="room__bar" aria-hidden="true"></span>
+              </button>
+            </li>
+
+            <li>
+              <button type="button" class="room room--free">
+                <svg
+                  class="room__icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="m8.5 12.5 2.5 2.5 4.5-5" />
+                </svg>
+                <span class="room__body">
+                  <span class="room__name">The Annex</span>
+                  <span class="room__state">Free · nothing booked today</span>
+                </span>
+                <span class="room__seats tnum">6 seats</span>
+                <span class="room__bar" aria-hidden="true"></span>
+              </button>
+            </li>
+
+            <li>
+              <button type="button" class="room room--free">
+                <svg
+                  class="room__icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="m8.5 12.5 2.5 2.5 4.5-5" />
+                </svg>
+                <span class="room__body">
+                  <span class="room__name">Studio</span>
+                  <span class="room__state">Free · until 10:00</span>
+                </span>
+                <span class="room__seats tnum">2 seats</span>
+                <span class="room__bar" aria-hidden="true"></span>
+              </button>
+            </li>
+
+            <li>
+              <button type="button" class="room room--busy" disabled>
+                <svg
+                  class="room__icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+                <span class="room__body">
+                  <span class="room__name">Oak</span>
+                  <span class="room__state">Busy · free from 10:30</span>
+                </span>
+                <span class="room__seats tnum">8 seats</span>
+                <span class="room__bar" aria-hidden="true"></span>
+              </button>
+            </li>
+
+            <li>
+              <button type="button" class="room room--busy" disabled>
+                <svg
+                  class="room__icon"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
+                >
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M12 7v5l3 2" />
+                </svg>
+                <span class="room__body">
+                  <span class="room__name">Harbour</span>
+                  <span class="room__state">Busy · free from 11:00</span>
+                </span>
+                <span class="room__seats tnum">12 seats</span>
+                <span class="room__bar" aria-hidden="true"></span>
+              </button>
+            </li>
+          </ul>
+
+          <button type="button" class="cta">Book a room</button>
+        </section>
+
+        <section aria-labelledby="mine-title">
+          <div class="section__head">
+            <h2 class="section__title" id="mine-title">Your bookings today</h2>
+          </div>
+
+          <ul class="list">
+            <li class="booking">
+              <span class="booking__time tnum">09:00 – 10:30</span>
+              <span class="booking__what">
+                <span class="booking__room">Oak</span>
+                <span class="booking__label">Design review</span>
+                <span class="now-chip">Happening now</span>
+              </span>
+            </li>
+            <li class="booking">
+              <span class="booking__time tnum">15:00 – 17:30</span>
+              <span class="booking__what">
+                <span class="booking__room">Harbour</span>
+                <span class="booking__label">Supplier workshop</span>
+              </span>
+            </li>
+          </ul>
+
+          <p class="foot tnum">
+            Checked 09:12 · refreshes every 30s. Showing fixture data — the rooms API is not built
+            yet.
+          </p>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>
